@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=0.25,maximum-scale=5,user-scalable=yes">
+  <title>Alpha Token Volume Board</title>
+
+  <!-- 手机端自动缩小视口，让页面显示更完整 -->
+  <script>
+  (function(){
+    if(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){
+      var w=screen.width||window.innerWidth;
+      if(w<800){
+        document.querySelector('meta[name="viewport"]')
+          .setAttribute('content','width=860,initial-scale='+(w/860).toFixed(3)+',minimum-scale=0.25,maximum-scale=5,user-scalable=yes');
+      }
+    }
+  })();
+  </script>
+
+  <script defer src="/_vercel/insights/script.js"></script>
+
+  <style>
+    :root{ --bg:#f9fafb;--text:#1f2937;--sub:#6b7280;--border:#e5e7eb; --green:#16a34a;--red:#dc2626;--primary:#2563eb }
+    @media(prefers-color-scheme:dark){
+      :root{--bg:#1e293b;--text:#f3f4f6;--sub:#9ca3af;--border:#334155}
+    }
+    :root.dark{--bg:#1e293b;--text:#f3f4f6;--sub:#9ca3af;--border:#334155}
+    :root.light{--bg:#f9fafb;--text:#1f2937;--sub:#6b7280;--border:#e5e7eb}
+    #themeBtn,#langBtn{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 8px;cursor:pointer;font-size:.85rem}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif;
+      background:var(--bg);color:var(--text);line-height:1.5
+    }
+    h1{padding:18px 12px;text-align:center;font-size:1.35rem;color:var(--primary)}
+
+    /* 最后更新时间 */
+    .last-up{ text-align:center;font-size:.8rem;color:var(--sub);margin-top:-6px;margin-bottom:12px }
+
+    /* ---------- 顶栏 ---------- */
+    #bar{
+      max-width:1200px;margin:0 auto 12px;
+      display:flex;flex-direction:column;gap:8px;
+      padding:0 6px
+    }
+    #bar-row1{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+    #bar-row1 input[type="search"]{flex:1;min-width:160px}
+    #bar-row2{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+    #bar-row2 input[type="text"]{width:120px}
+    #bar-row2 input[type="datetime-local"]{width:190px}
+    #bar-row2 input[type="date"]{width:145px}
+    #bar input{
+      padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:.85rem
+    }
+    .btn{
+      display:inline-flex;align-items:center;gap:4px;
+      padding:6px 12px;font-size:.85rem;border:1px solid var(--primary);
+      color:#fff;background:var(--primary);border-radius:4px;cursor:pointer
+    }
+    .btn[disabled]{background:#9ca3af;border-color:#9ca3af;cursor:not-allowed}
+    .badge{ /* 仅用于进度百分比 */
+      display:none;padding:0 6px;border-radius:10px;font-size:.7rem;font-weight:700;
+      background:#fff;color:var(--primary)
+    }
+    #bar-right{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto}
+    #author{font-size:.8rem;white-space:nowrap}
+    #author a{color:var(--primary);text-decoration:none}
+
+    /* 新增：过滤开关 */
+    .chk{
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:.85rem;color:var(--text);user-select:none
+    }
+
+    /* ---------- 广告位 ---------- */
+    .ad{
+      max-width:1200px;margin:0 auto 10px;padding:8px 10px;
+      display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+      border:1px dashed var(--border);border-radius:6px;background:rgba(0,0,0,.02)
+    }
+    .ad-badge{
+      font-size:.68rem;padding:0 6px;border-radius:8px;color:#fff;background:#6b7280
+    }
+    .ad-note{font-size:.82rem;color:var(--primary)}
+    .ad-links{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+    .ad .btn{padding:6px 10px}
+
+    /* ✅ Telegram 徽章 */
+    .tg-badge{
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:.75rem;padding:2px 8px;border-radius:10px;
+      color:#fff;background:#229ED9;text-decoration:none;line-height:1.6
+    }
+    .tg-badge:hover{opacity:.9}
+    .tg-badge .icon{font-size:.9rem;line-height:1}
+
+    /* ---------- 表格 ---------- */
+    .table-wrap{max-width:1200px;margin:0 auto;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    table{ width:100%;border-collapse:collapse;min-width:620px }
+    th,td{
+      padding:10px 6px;border-bottom:1px solid var(--border);
+      font-size:.85rem;text-align:left;white-space:nowrap
+    }
+    tbody tr:hover{background:rgba(0,0,0,.04);cursor:pointer}
+
+    /* 窄屏固定前3列（星标 + 序号 + 代币名）—— 仅在未启用宽视口时生效 */
+    @media(max-width:760px){
+      th:nth-child(-n+3),td:nth-child(-n+3){position:sticky;background:var(--bg);z-index:1}
+      th:nth-child(1),td:nth-child(1){left:0;min-width:26px}
+      th:nth-child(2),td:nth-child(2){left:26px;min-width:28px}
+      th:nth-child(3),td:nth-child(3){left:54px;box-shadow:2px 0 4px rgba(0,0,0,.06)}
+    }
+
+    th.sortable{cursor:pointer;user-select:none;position:relative}
+    th.sortable::after{
+      content:'▲';position:absolute;right:4px;font-size:.6rem;color:var(--sub);
+      transform:scale(.8);opacity:0;transition:opacity .2s
+    }
+    th.sortable.desc::after{content:'▼';opacity:1}
+    th.sortable.asc::after{content:'▲';opacity:1}
+
+    /* Star */
+    .star{cursor:pointer;font-size:1rem;color:var(--sub);user-select:none;transition:transform .15s,color .15s}
+    .star.fav{color:#f7b500}.star.bounce{transform:scale(1.4)}
+
+    /* 颜色 & 小字 */
+    .logo{width:18px;height:18px;margin-right:4px;vertical-align:middle;border-radius:50%}
+    .up{color:var(--green)}.down{color:var(--red)}
+    .subl{display:block;font-size:.72rem;color:var(--sub)}
+
+    /* ✅ 30天内上新标记 */
+    .tag-new{
+      display:inline-block;margin-left:6px;padding:0 6px;border-radius:10px;
+      font-size:.68rem;line-height:1.4;border:1px solid var(--primary);
+      color:var(--primary);background:rgba(37,99,235,.08)
+    }
+
+    /* ✅ 合约标记 */
+    .tag-futures{
+      display:inline-block;margin-left:4px;padding:0 5px;border-radius:10px;
+      font-size:.68rem;line-height:1.4;border:1px solid #f59e0b;
+      color:#f59e0b;background:rgba(245,158,11,.08);font-weight:700
+    }
+
+    /* ✅ 交易赛总交易量：主数字加深加粗 + 点击复制 */
+    .comp-vol-main{
+      display:inline-block;font-weight:800;color:#111827;font-size:.92rem;
+      cursor:copy;padding:0 2px;border-radius:3px;transition:background .15s
+    }
+    .comp-vol-main:hover{background:rgba(37,99,235,.12)}
+    :root.dark .comp-vol-main{color:#f9fafb}
+    @media(prefers-color-scheme:dark){
+      :root:not(.light) .comp-vol-main{color:#f9fafb}
+    }
+
+    /* ✅ 交易赛标记 */
+    .tag-comp{
+      display:inline-block;margin-left:4px;padding:0 5px;border-radius:10px;
+      font-size:.68rem;line-height:1.4;font-weight:700;cursor:help
+    }
+    .tag-comp.comp-active{
+      border:1px solid #16a34a;color:#16a34a;background:rgba(22,163,74,.08)
+    }
+    .tag-comp.comp-ended{
+      border:1px solid #9ca3af;color:#9ca3af;background:rgba(156,163,175,.08)
+    }
+    .tag-comp.comp-upcoming{
+      border:1px solid #2563eb;color:#2563eb;background:rgba(37,99,235,.08)
+    }
+
+    /* Toast */
+    #toast{
+      position:fixed;bottom:40px;left:50%;transform:translateX(-50%);
+      background:rgba(0,0,0,.8);color:#fff;padding:8px 16px;border-radius:6px;
+      font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .3s
+    }
+
+    /* 自定义区间结果 */
+    #customVol{max-width:1200px;margin:4px auto 0;font-size:.9rem;color:var(--primary);padding:0 6px}
+
+    /* ---------- 按天统计 ---------- */
+    #dailyBox{
+      max-width:1200px;
+      margin:8px auto 0;
+      padding:0 6px;
+    }
+    #dailyBox h3{
+      font-size:1rem;
+      margin:6px 0 8px;
+      color:var(--primary);
+    }
+    #dailyBox .tip{
+      font-size:.78rem;
+      color:var(--sub);
+      margin:0 0 8px;
+    }
+    #dailyBox .daily-scroll{
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    #dailyBox table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:620px;
+    }
+    #dailyBox th,#dailyBox td{
+      border-bottom:1px solid var(--border);
+      padding:8px 6px;
+      font-size:.85rem;
+      white-space:nowrap;
+    }
+    #dailyBox tfoot td{
+      font-weight:700;
+    }
+
+    /* ---------- 小时交易量 ---------- */
+    #hourlyWrap{max-width:1200px;margin:10px auto 0;padding:0 6px}
+    .hourly-header{
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;
+      padding:8px 12px;background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(37,99,235,.02));
+      border-radius:8px;border:1px solid rgba(37,99,235,.15)
+    }
+    .hourly-header .hourly-title{font-size:.9rem;color:var(--primary);font-weight:700}
+    .hourly-header .hourly-total{
+      font-size:.82rem;color:var(--text);font-weight:600;
+      background:rgba(37,99,235,.1);padding:2px 10px;border-radius:12px
+    }
+    .hourly-header .hourly-actions{
+      display:inline-flex;align-items:center;gap:6px;margin-left:4px
+    }
+    .hourly-header .hourly-min{
+      background:transparent;border:1px solid var(--border);color:var(--text);
+      border-radius:4px;padding:2px 10px;font-size:.76rem;cursor:pointer;
+      line-height:1.3;user-select:none
+    }
+    .hourly-header .hourly-min:hover{background:rgba(37,99,235,.1);border-color:var(--primary);color:var(--primary)}
+    #hourlyWrap.collapsed .hourly-scroll{display:none}
+    #hourlyWrap.collapsed .hourly-header{border-radius:8px}
+    .hourly-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;
+      background:repeating-linear-gradient(0deg,transparent,transparent 24px,var(--border) 24px,var(--border) 25px);
+      border-radius:0 0 8px 8px;padding:8px 4px 0;border:1px solid var(--border);border-top:none
+    }
+    #hourlyWrap .hourly-bar{display:flex;align-items:flex-end;gap:4px;margin-top:0;min-width:max-content;padding-bottom:2px}
+    #hourlyWrap .hourly-bar .h-col{
+      display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;flex:1;
+      transition:transform .15s;cursor:default
+    }
+    #hourlyWrap .hourly-bar .h-col:hover{transform:scaleY(1.03) translateY(-1px)}
+    #hourlyWrap .hourly-bar .h-col .h-bar{
+      width:calc(100% - 8px);min-height:4px;border-radius:4px 4px 1px 1px;
+      background:linear-gradient(180deg,#3b82f6,#2563eb);
+      box-shadow:0 1px 3px rgba(37,99,235,.2);
+      transition:height .4s cubic-bezier(.4,0,.2,1),opacity .3s
+    }
+    #hourlyWrap .hourly-bar .h-col:hover .h-bar{
+      background:linear-gradient(180deg,#60a5fa,#3b82f6);
+      box-shadow:0 2px 8px rgba(37,99,235,.35)
+    }
+    #hourlyWrap .hourly-bar .h-col .h-val{font-size:.68rem;color:var(--sub);font-weight:600;white-space:nowrap}
+    #hourlyWrap .hourly-bar .h-col:hover .h-val{color:var(--primary)}
+    #hourlyWrap .hourly-bar .h-col .h-lbl{font-size:.66rem;color:var(--sub);padding-bottom:2px;white-space:nowrap}
+    #hourlyWrap .hourly-bar .h-col.h-max .h-bar{background:linear-gradient(180deg,#22c55e,#16a34a);box-shadow:0 1px 3px rgba(22,163,74,.25)}
+    #hourlyWrap .hourly-bar .h-col.h-max .h-val{color:var(--green);font-weight:700}
+    #hourlyWrap .hourly-bar .h-col.h-min .h-bar{background:linear-gradient(180deg,#f87171,#dc2626);box-shadow:0 1px 3px rgba(220,38,38,.25)}
+    #hourlyWrap .hourly-bar .h-col.h-min .h-val{color:var(--red);font-weight:700}
+    @keyframes barGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+    #hourlyWrap .hourly-bar .h-col .h-bar{transform-origin:bottom;animation:barGrow .5s cubic-bezier(.4,0,.2,1) both}
+
+    /* ---------- 查询缓存记录 ---------- */
+    #cacheWrap{max-width:1200px;margin:6px auto 0;padding:0 6px}
+    .cache-hd{display:flex;align-items:center;gap:8px}
+    #cacheToggle{font-size:.82rem;color:var(--primary);cursor:pointer;user-select:none;background:none;border:none}
+    #cacheToggle:hover{text-decoration:underline}
+    #cacheClearAll{font-size:.76rem;color:var(--red);cursor:pointer;background:none;border:1px solid var(--red);border-radius:4px;padding:1px 8px;display:none}
+    #cacheClearAll:hover{background:rgba(220,38,38,.08)}
+    /* hourly-total styles moved to #hourlyWrap section */
+    #cacheList{margin-top:4px;display:none;border:1px solid var(--border);border-radius:6px;overflow:hidden;max-height:260px;overflow-y:auto}
+    #cacheList .cache-item{
+      display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:.82rem;
+      border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s
+    }
+    #cacheList .cache-item:last-child{border-bottom:none}
+    #cacheList .cache-item:hover{background:rgba(37,99,235,.06)}
+    #cacheList .cache-item .ci-info{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #cacheList .cache-item .ci-del{
+      color:var(--red);cursor:pointer;font-size:.78rem;padding:2px 6px;border-radius:4px;
+      border:1px solid transparent;flex-shrink:0
+    }
+    #cacheList .cache-item .ci-del:hover{border-color:var(--red);background:rgba(220,38,38,.06)}
+    #cacheList .cache-empty{padding:10px;text-align:center;font-size:.8rem;color:var(--sub)}
+
+    footer{height:16px;margin-bottom:12px}
+
+    /* ---------- 回到顶部按钮 ---------- */
+    #backTop{
+      position:fixed;bottom:32px;right:20px;width:40px;height:40px;
+      border-radius:50%;border:1px solid var(--border);background:var(--bg);color:var(--text);
+      font-size:1.1rem;cursor:pointer;display:none;align-items:center;justify-content:center;
+      box-shadow:0 2px 8px rgba(0,0,0,.12);z-index:99;transition:opacity .3s
+    }
+    #backTop:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+    @media(max-width:860px){
+      #bar-row2 input[type="datetime-local"]{flex:1;min-width:140px}
+      #bar-row2 input[type="date"]{width:116px;font-size:.75rem;padding:4px 5px}
+      .ad-links{width:100%;justify-content:flex-start;margin-left:0}
+      #dailyBox h3{font-size:.88rem}
+      #dailyBox .tip{font-size:.72rem}
+      #dailyBox th,#dailyBox td{padding:6px 4px;font-size:.76rem}
+    }
+
+    /* =========================================================
+       ✅ 仅优化广告位 ad-links 里的注册链接按钮 + 引导提示（不影响顶部按钮）
+       ========================================================= */
+    .ad-links{gap:10px;align-items:center; position:relative; padding-bottom:18px;}
+
+    /* 覆盖广告区按钮尺寸与圆角 */
+    .ad-links .btn{
+      padding:9px 14px;
+      border-radius:12px;
+      font-weight:800;
+      line-height:1.2;
+      text-decoration:none;
+      transition:transform .15s, box-shadow .15s, background .2s, color .2s, border-color .2s;
+      white-space:nowrap;
+    }
+    .ad-links .btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 10px 22px rgba(0,0,0,.12);
+    }
+
+    /* ✅ 币安 & OKX 按钮：透明描边 + 推荐角标（合并重复样式） */
+    .ad-links .btn-main,
+    .ad-links .btn-ghost{
+      background:transparent !important;
+      border-color:var(--primary) !important;
+      color:var(--primary) !important;
+      position:relative;
+    }
+    .ad-links .btn-main:hover,
+    .ad-links .btn-ghost:hover{
+      background:rgba(37,99,235,.10) !important;
+    }
+    .ad-links .btn-main::after,
+    .ad-links .btn-ghost::after{
+      content:attr(data-badge);
+      position:absolute;
+      top:-8px; right:-8px;
+      font-size:.68rem;
+      padding:2px 6px;
+      border-radius:999px;
+      background:#f59e0b;
+      color:#fff;
+      box-shadow:0 8px 18px rgba(0,0,0,.16);
+    }
+
+    /* ✅ 引导标志：点击注册提醒（桌面端显示在按钮下方） */
+    @keyframes hintNudge{
+      0%,100%{ transform:translateX(-50%) translateY(0); }
+      50%{ transform:translateX(-50%) translateY(-2px); }
+    }
+    .ad-links::after{
+      content:attr(data-hint);
+      position:absolute;
+      left:50%;
+      bottom:0;
+      transform:translateX(-50%);
+      font-size:.72rem;
+      color:var(--sub);
+      white-space:nowrap;
+      pointer-events:none;
+      opacity:.9;
+      animation:hintNudge 1.4s ease-in-out 6;
+    }
+
+    /* 手机端：提示改为正常占位，避免绝对定位挤压布局 */
+    @media(max-width:860px){
+      .ad-links{ padding-bottom:0; }
+      .ad-links::after{
+        position:static;
+        display:block;
+        transform:none;
+        animation:none;
+        margin-top:6px;
+        text-align:left;
+      }
+    }
+
+    /* ========== 手机端全局优化（视口已被 JS 拉宽到 860px） ========== */
+    @media(max-width:860px){
+      h1{font-size:1.1rem;padding:10px 8px 6px}
+      .last-up{font-size:.72rem;margin-bottom:6px}
+      #bar{gap:5px;padding:0 6px;margin-bottom:8px}
+      #bar-row1{gap:5px}
+      #bar-row1 input[type="search"]{min-width:120px;font-size:.8rem;padding:5px 6px}
+      .btn{padding:5px 10px;font-size:.8rem}
+      .chk{font-size:.78rem;gap:3px}
+      #bar-right{gap:5px}
+      #author{font-size:.74rem}
+      #bar-row2{gap:5px}
+      #bar-row2 input[type="text"]{width:90px;font-size:.8rem;padding:5px 6px}
+      #bar-row2 input[type="datetime-local"]{font-size:.75rem;padding:4px 5px}
+      #bar-row2 input[type="number"]{font-size:.8rem;padding:4px}
+      /* 广告区紧凑 */
+      .ad{padding:6px 8px;gap:6px;margin-bottom:6px}
+      .ad-badge{font-size:.64rem}
+      .tg-badge{font-size:.7rem;padding:1px 6px}
+      .ad-links .btn{padding:6px 10px;font-size:.74rem;border-radius:8px}
+      .ad-links{gap:8px}
+      /* 表格 —— 不再需要水平滚动 */
+      table{min-width:auto;width:100%}
+      th,td{padding:8px 4px;font-size:.78rem}
+      .tag-new,.tag-futures,.tag-comp{font-size:.62rem;padding:0 4px;margin-left:2px}
+      .logo{width:16px;height:16px;margin-right:2px}
+      .subl{font-size:.66rem}
+      /* 手机端不再需要 sticky 列（整个表格已可见） */
+      th:nth-child(-n+3),td:nth-child(-n+3){position:static;box-shadow:none}
+      /* 小时图紧凑 */
+      #hourlyWrap{margin-top:6px}
+      .hourly-header{padding:6px 8px}
+      .hourly-header .hourly-title{font-size:.8rem}
+      .hourly-header .hourly-total{font-size:.74rem}
+      /* 缓存区紧凑 */
+      #cacheWrap{margin-top:4px}
+      #cacheToggle{font-size:.76rem}
+      #cacheList .cache-item{padding:4px 8px;font-size:.76rem}
+    }
+  </style>
+</head>
+<body>
+  <h1 id="title">Binance&nbsp;Alpha&nbsp;&mdash;&nbsp;24H&nbsp;交易量排行榜</h1>
+  <p id="lastUp" class="last-up"></p>
+
+  <div id="bar">
+    <div id="bar-row1">
+      <input id="search" type="search" placeholder="🔍 按代币名称 / 符号过滤…">
+      <button id="refreshBtn" class="btn"> ⟳ <span data-i18n="refresh">刷新数据</span> <span id="progress" class="badge">0%</span> </button>
+      <label class="chk"><input id="onlyNew" type="checkbox"> <span data-i18n="onlyNew">仅看30天内上新</span></label>
+      <label class="chk"><input id="onlyFutures" type="checkbox"> <span data-i18n="onlyFutures">仅看有合约</span></label>
+      <label class="chk"><input id="onlySec" type="checkbox"> <span data-i18n="onlySec">仅看代币化证券</span></label>
+      <label class="chk"><input id="onlyComp" type="checkbox"> <span data-i18n="onlyComp">仅看交易赛</span></label>
+      <div id="bar-right">
+        <button id="langBtn" title="Switch Language">EN</button>
+        <button id="themeBtn" title="切换深色/浅色模式">🌓</button>
+        <div id="author"> 作者&nbsp;<a href="https://x.com/intent/follow?screen_name=0xXIAOc" target="_blank">@0xXIAOc</a> </div>
+      </div>
+    </div>
+    <div id="bar-row2">
+      <input id="tokenInput" type="text" placeholder="输入代币名称">
+      <input id="startTime" type="datetime-local">
+      <input id="endTime" type="datetime-local">
+      <button id="rangeBtn" class="btn" data-i18n="rangeQuery">区间查询</button>
+      <span style="margin-left:8px;color:var(--sub);font-size:.82rem">|</span>
+      <input id="hourlyHours" type="number" min="1" max="72" value="6" style="width:52px" title="小时数">
+      <button id="hourlyBtn" class="btn" data-i18n="hourlyQuery">小时交易量</button>
+      <span style="margin-left:8px;color:var(--sub);font-size:.82rem">|</span>
+      <input id="dailyToken" type="text" placeholder="(可选)按天统计代币">
+      <input id="dailyStart" type="date" title="开始日期">
+      <input id="dailyEnd" type="date" title="结束日期">
+      <button id="dailyBtn" class="btn" data-i18n="dailyQuery">按天统计</button>
+    </div>
+  </div>
+
+  <!-- 广告位 -->
+  <div class="ad">
+    <span class="ad-badge" data-i18n="adBadge">广告</span>
+    <span class="ad-note"></span>
+
+    <a class="tg-badge" href="https://t.me/+lKbtX0zMcAVjYjMx" target="_blank" rel="noopener noreferrer" aria-label="加入Alpha交流群" title="加入 Telegram 频道">
+      <span class="icon">✈️</span> <span data-i18n="joinTg">加入Alpha交流群</span>
+    </a>
+
+    <div class="ad-links" data-hint="👆 点击上方按钮绑定邀请码" data-badge-text="推荐">
+      <a class="btn btn-main" data-badge="推荐" href="https://web3.binance.com/referral?ref=XIAOCC" target="_blank" rel="noopener noreferrer" data-i18n="bnbReg">
+        币安钱包注册｜手续费7折
+      </a>
+      <a class="btn btn-ghost" data-badge="推荐" href="https://web3.okx.com/ul/joindex?ref=XIAOCC" target="_blank" rel="noopener noreferrer" data-i18n="okxReg">
+        OKX 钱包注册｜手续费8折
+      </a>
+    </div>
+  </div>
+
+  <div id="customVol"></div>
+  <div id="hourlyWrap"></div>
+  <div id="dailyBox"></div>
+  <div id="cacheWrap">
+    <div class="cache-hd">
+      <button id="cacheToggle" style="display:none"></button>
+      <button id="cacheClearAll"></button>
+    </div>
+    <div id="cacheList"></div>
+  </div>
+
+  <div class="table-wrap">
+  <table id="tokenTable">
+    <thead>
+      <tr>
+        <th style="width:26px"></th><th>#</th><th id="thName">代币名字</th>
+        <th id="thPrice">价格</th>
+        <th id="thVol24h" class="sortable" data-key="vol24h">24H 交易量</th>
+        <th id="thChg">24H 变化</th>
+        <th id="thFdv" class="sortable" data-key="fdv">FDV</th>
+        <th id="thToday" class="sortable" data-key="todayQV">当天限价单成交额</th>
+        <th id="thPrev" class="sortable" data-key="prevQV">前一天限价单成交额</th>
+        <th id="thCompVol" class="sortable" data-key="compVol" style="display:none">交易赛总交易量</th>
+      </tr>
+    </thead>
+    <tbody><tr><td colspan="9" id="initLoading" style="text-align:center;padding:24px">加载中…</td></tr></tbody>
+  </table>
+  </div>
+
+  <button id="backTop" title="回到顶部">↑</button>
+  <div id="toast"></div>
+  <footer></footer>
+
+  <script>
+    /* ========== i18n 多语言 ========== */
+    const I18N = {
+      zh: {
+        title: 'Binance\u00a0Alpha\u00a0\u2014\u00a024H\u00a0交易量排行榜',
+        searchPh: '🔍 按代币名称 / 符号过滤…',
+        refresh: '刷新数据',
+        onlyNew: '仅看30天内上新',
+        onlyFutures: '仅看有合约',
+        onlySec: '仅看代币化证券',
+        tokenPh: '输入代币名称',
+        rangeQuery: '区间查询',
+        adBadge: '广告',
+        joinTg: '加入Alpha交流群',
+        bnbReg: '币安钱包注册｜手续费7折',
+        okxReg: 'OKX 钱包注册｜手续费8折',
+        badge: '推荐',
+        adHint: '👆 点击上方按钮绑定邀请码',
+        thName: '代币名字',
+        thPrice: '价格',
+        thFdv: 'FDV',
+        thVol24h: '24H 交易量',
+        thChg: '24H 变化',
+        thTodayLabel: '当天限价单成交额',
+        thPrevLabel: '前一天限价单成交额',
+        loading: '加载中…',
+        lastUp: '最后更新时间：',
+        failLoad: '加载失败：',
+        unknownErr: '未知错误',
+        favAdd: '已加入收藏',
+        favDel: '已移除收藏',
+        enterSym: '请输入代币符号',
+        notFound: '未找到该代币',
+        badRange: '时间范围不合法',
+        querying: '查询…',
+        rangeTpl: (sym,s,e,vol) => `<strong>${sym}</strong> 在\u00a0<span>${s}</span> ~ <span>${e}</span> 的限价单成交额：<strong>${vol}</strong>`,
+        newTag: (d) => `🆕 剩${d}天`,
+        futuresTag: '合约',
+        listingTip: '上新：',
+        langBtn: 'EN',
+        themeBtn: '切换深色/浅色模式',
+        backTop: '回到顶部',
+        author: '作者',
+        hourlyQuery: '小时交易量',
+        hourlyHoursPh: '小时数',
+        hourlyTpl: (sym,h) => `<strong>${sym}</strong> 近 ${h} 小时每小时交易量：`,
+        cacheTitle: '📋 查询记录',
+        cacheHide: '📋 收起记录',
+        cacheEmpty: '暂无查询记录',
+        cacheDel: '删除',
+        cacheLoad: '加载',
+        cacheClearAll: '清空全部',
+        cacheTime: '查询于',
+        hourlyTotal: (vol) => `合计：${vol}`,
+        tradeStats: (trades, avg) => `共 ${trades} 笔 | 约 ${avg} USD/笔`,
+        avgPerTrade: (avg) => `约$${avg}/笔`,
+        hourlyType: 'hourly',
+        onlyComp: '仅看交易赛',
+        thCompVol: '交易赛总交易量',
+        copied: '已复制',
+        copyFail: '复制失败',
+        hourlyMinimize: '收起',
+        hourlyExpand: '展开',
+        compTag: '交易赛',
+        compActive: (d,unit) => `🏆 交易赛 剩${d}${unit==='m'?'分钟':unit==='h'?'小时':'天'}`,
+        compEnded: '🏆 已结束',
+        compUpcoming: '🏆 未开始',
+        compTip: (topN, pool, perWinner, start, end) => `参与资格：前${topN}名\n奖池：${pool}\n每人：${perWinner}\n${start} ~ ${end}`,
+        aggSecName: '代币化证券总交易大赛',
+        dailyTokenPh: '(可选)按天统计代币',
+        dailyQuery: '按天统计',
+        dailyStartTitle: '开始日期',
+        dailyEndTitle: '结束日期',
+        dailyAll: '全部 Alpha 代币（总量）',
+        dailyTitle: (name) => `按天统计（${name}）`,
+        dailyTip: (n) => `口径：上海时区 08:00 至次日 08:00 为一天；共 ${n} 天。`,
+        dailyDate: '日期',
+        dailyWindow: '时间窗口',
+        dailyVolume: '限价单成交额',
+        dailyTrades: '成交笔数',
+        dailyAvgTrade: '均笔成交额',
+        dailySum: '合计',
+        dailyMean: '日均',
+        dailyBadDate: '请选择有效的开始/结束日期'
+      },
+      en: {
+        title: 'Binance\u00a0Alpha\u00a0\u2014\u00a024H\u00a0Volume\u00a0Board',
+        searchPh: '🔍 Filter by token name / symbol…',
+        refresh: 'Refresh',
+        onlyNew: 'New (30d) only',
+        onlyFutures: 'Futures only',
+        onlySec: 'Tokenized Securities only',
+        tokenPh: 'Token name',
+        rangeQuery: 'Range Query',
+        adBadge: 'Ad',
+        joinTg: 'Join Alpha Group',
+        bnbReg: 'Binance Wallet | 30% Fee Off',
+        okxReg: 'OKX Wallet | 20% Fee Off',
+        badge: 'Rec',
+        adHint: '👆 Click above to bind referral',
+        thName: 'Token',
+        thPrice: 'Price',
+        thFdv: 'FDV',
+        thVol24h: '24H Volume',
+        thChg: '24H Change',
+        thTodayLabel: 'Today Limit Order Volume',
+        thPrevLabel: 'Prev Day Limit Order Volume',
+        loading: 'Loading…',
+        lastUp: 'Last updated: ',
+        failLoad: 'Load failed: ',
+        unknownErr: 'Unknown error',
+        favAdd: 'Added to favorites',
+        favDel: 'Removed from favorites',
+        enterSym: 'Enter token symbol',
+        notFound: 'Token not found',
+        badRange: 'Invalid time range',
+        querying: 'Querying…',
+        rangeTpl: (sym,s,e,vol) => `<strong>${sym}</strong> limit order volume from\u00a0<span>${s}</span> to <span>${e}</span>: <strong>${vol}</strong>`,
+        newTag: (d) => `🆕 ${d}d left`,
+        futuresTag: 'Futures',
+        listingTip: 'Listed: ',
+        langBtn: '中',
+        themeBtn: 'Toggle dark/light mode',
+        backTop: 'Back to top',
+        author: 'Author',
+        hourlyQuery: 'Hourly Volume',
+        hourlyHoursPh: 'Hours',
+        hourlyTpl: (sym,h) => `<strong>${sym}</strong> hourly volume (last ${h}h):`,
+        cacheTitle: '📋 Query History',
+        cacheHide: '📋 Hide History',
+        cacheEmpty: 'No query history',
+        cacheDel: 'Del',
+        cacheLoad: 'Load',
+        cacheClearAll: 'Clear All',
+        cacheTime: 'Queried at',
+        hourlyTotal: (vol) => `Total: ${vol}`,
+        tradeStats: (trades, avg) => `${trades} trades | ~${avg} USD/trade`,
+        avgPerTrade: (avg) => `~$${avg}/trade`,
+        hourlyType: 'hourly',
+        onlyComp: 'Competition only',
+        thCompVol: 'Total Competition Volume',
+        copied: 'Copied',
+        copyFail: 'Copy failed',
+        hourlyMinimize: 'Minimize',
+        hourlyExpand: 'Expand',
+        compTag: 'Comp',
+        compActive: (d,unit) => `🏆 Comp ${d}${unit==='m'?'m':unit==='h'?'h':'d'} left`,
+        compEnded: '🏆 Ended',
+        compUpcoming: '🏆 Upcoming',
+        compTip: (topN, pool, perWinner, start, end) => `Eligibility: Top ${topN}\nPrize: ${pool}\nPer winner: ${perWinner}\n${start} ~ ${end}`,
+        aggSecName: 'Tokenized Securities Total Comp',
+        dailyTokenPh: 'Optional token for daily stats',
+        dailyQuery: 'Daily Stats',
+        dailyStartTitle: 'Start date',
+        dailyEndTitle: 'End date',
+        dailyAll: 'All Alpha Tokens Total',
+        dailyTitle: (name) => `Daily Stats (${name})`,
+        dailyTip: (n) => `Rule: one day is 08:00 to next-day 08:00 in Asia/Shanghai timezone; ${n} days total.`,
+        dailyDate: 'Date',
+        dailyWindow: 'Time Window',
+        dailyVolume: 'Limit Order Volume',
+        dailyTrades: 'Trades',
+        dailyAvgTrade: 'Avg / Trade',
+        dailySum: 'Total',
+        dailyMean: 'Daily Avg',
+        dailyBadDate: 'Please choose a valid start/end date'
+      }
+    };
+    let curLang = localStorage.getItem('lang') || 'zh';
+    function t(key){ return I18N[curLang][key] || I18N.zh[key] || key; }
+
+    function applyI18n(){
+      document.title = curLang==='zh' ? 'Alpha 代币交易量看板' : 'Alpha Token Volume Board';
+      document.documentElement.lang = curLang==='zh' ? 'zh' : 'en';
+      document.getElementById('title').innerHTML = t('title');
+      document.getElementById('search').placeholder = t('searchPh');
+      document.querySelector('[data-i18n="refresh"]').textContent = t('refresh');
+      document.querySelector('[data-i18n="onlyNew"]').textContent = t('onlyNew');
+      document.querySelector('[data-i18n="onlyFutures"]').textContent = t('onlyFutures');
+      document.querySelector('[data-i18n="onlySec"]').textContent = t('onlySec');
+      document.querySelector('[data-i18n="onlyComp"]').textContent = t('onlyComp');
+      document.getElementById('tokenInput').placeholder = t('tokenPh');
+      document.getElementById('rangeBtn').textContent = t('rangeQuery');
+      document.getElementById('hourlyBtn').textContent = t('hourlyQuery');
+      document.getElementById('hourlyHours').title = t('hourlyHoursPh');
+      document.getElementById('dailyToken').placeholder = t('dailyTokenPh');
+      document.getElementById('dailyBtn').textContent = t('dailyQuery');
+      document.getElementById('dailyStart').title = t('dailyStartTitle');
+      document.getElementById('dailyEnd').title = t('dailyEndTitle');
+      document.querySelector('[data-i18n="adBadge"]').textContent = t('adBadge');
+      document.querySelector('[data-i18n="joinTg"]').textContent = t('joinTg');
+      document.querySelector('[data-i18n="bnbReg"]').textContent = t('bnbReg');
+      document.querySelector('[data-i18n="okxReg"]').textContent = t('okxReg');
+      document.querySelectorAll('.ad-links .btn-main, .ad-links .btn-ghost').forEach(el=>{
+        el.setAttribute('data-badge', t('badge'));
+      });
+      document.querySelector('.ad-links').setAttribute('data-hint', t('adHint'));
+      document.getElementById('thName').textContent = t('thName');
+      document.getElementById('thPrice').textContent = t('thPrice');
+      document.getElementById('thFdv').childNodes[0].textContent = t('thFdv');
+      document.getElementById('thVol24h').childNodes[0].textContent = t('thVol24h');
+      document.getElementById('thChg').textContent = t('thChg');
+      document.getElementById('langBtn').textContent = t('langBtn');
+      document.getElementById('themeBtn').title = t('themeBtn');
+      document.getElementById('backTop').title = t('backTop');
+      const authorEl = document.getElementById('author');
+      authorEl.innerHTML = `${t('author')}&nbsp;<a href="https://x.com/intent/follow?screen_name=0xXIAOc" target="_blank">@0xXIAOc</a>`;
+      // update initial loading text if still present
+      const initEl = document.getElementById('initLoading');
+      if(initEl) initEl.textContent = t('loading');
+    }
+
+    /* ---------- 常量 & 工具 ---------- */
+    const LIST_API='https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/cex/alpha/all/token/list';
+    const K_API ='https://www.binance.com/bapi/defi/v1/public/alpha-trade/klines';
+    const FUTURES_API='https://fapi.binance.com/fapi/v1/exchangeInfo';
+
+    /* ---------- 交易赛配置（手动维护） ---------- */
+    const COMPETITIONS = [
+      { symbol:'TRIA',  start:Date.parse('2026-04-22T21:00:00+08:00'), end:Date.parse('2026-04-29T21:00:00+08:00'), topN:2000, pool:'3,600,000 TRIA',     perWinner:'1800 TRIA' },
+      { symbol:'GENIUS',  start:Date.parse('2026-04-23T21:00:00+08:00'), end:Date.parse('2026-04-30T21:00:00+08:00'), topN:2520, pool:'176,400 GENIUS',     perWinner:'70 GENIUS' },
+      { symbol:'PIEVERSE',  start:Date.parse('2026-04-21T21:00:00+08:00'), end:Date.parse('2026-04-28T21:00:00+08:00'), topN:2000, pool:'101,800 PIEVERSE',     perWinner:'30 PIEVERSE' },
+      { symbol:'JCT',  start:Date.parse('2026-04-22T21:00:00+08:00'), end:Date.parse('2026-04-29T21:00:00+08:00'), topN:2000, pool:'36,877,500 JCT',     perWinner:'16,390 JCT' },
+      { symbol:'OPG',  start:Date.parse('2026-04-24T21:00:00+08:00'), end:Date.parse('2026-05-01T21:00:00+08:00'), topN:3370, pool:'303,300 OPG',     perWinner:'90 OPG' },
+      { symbol:'ALLSEC', isAggregate:true, rewardSymbol:'TSLAON', start:Date.parse('2026-04-23T18:00:00+08:00'), end:Date.parse('2026-04-30T18:00:00+08:00'), topN:3000, pool:'375 TSLAon', perWinner:'0.125 TSLAon' },
+    ];
+    const COMP_MAP = Object.fromEntries(COMPETITIONS.filter(c=>!c.isAggregate).map(c=>[c.symbol.toUpperCase(), c]));
+    const AGGREGATE_COMPS = COMPETITIONS.filter(c=>c.isAggregate);
+    const nf0=new Intl.NumberFormat('en-US',{maximumFractionDigits:0});
+    const nf2=new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    /* 智能价格格式化：小于 0.01 的价格自动显示更多有效位 */
+    function fmtPrice(p){
+      if(p>=1) return nf2.format(p);
+      if(p>=0.01) return new Intl.NumberFormat('en-US',{minimumFractionDigits:4,maximumFractionDigits:4}).format(p);
+      const s=p.toFixed(20);const m=s.match(/^0\.(0+)/);
+      const zeros=m?m[1].length:0;
+      return new Intl.NumberFormat('en-US',{minimumFractionDigits:zeros+3,maximumFractionDigits:zeros+3}).format(p);
+    }
+    /* ✅ FDV 紧凑格式化 */
+    function fmtFdv(n){
+      if(!n||n<=0) return '-';
+      if(n>=1e9) return '$'+(n/1e9).toFixed(2)+'B';
+      if(n>=1e6) return '$'+(n/1e6).toFixed(2)+'M';
+      if(n>=1e3) return '$'+(n/1e3).toFixed(2)+'K';
+      return '$'+nf0.format(n);
+    }
+    const FAV_KEY='alphaFavs',CONCURRENCY=15;
+
+    /* ✅ 严格 30 天（毫秒） */
+    const THIRTY_DAYS = 29*24*60*60*1000;
+
+    function dateLoc(){ return curLang==='zh'?'zh-CN':'en-GB'; }
+    const fmtShort=ts=>new Intl.DateTimeFormat(dateLoc(), {
+      timeZone:'Asia/Shanghai',hour12:false,month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'
+    }).format(new Date(ts)).replace(/\//g,'-');
+
+    const fmtFull=ts=>new Intl.DateTimeFormat(dateLoc(), {
+      timeZone:'Asia/Shanghai',hour12:false,year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',second:'2-digit'
+    }).format(new Date(ts)).replace(/\//g,'-');
+
+    const nearest8UTC=()=>{
+      const n=new Date(),b=new Date();
+      b.setHours(8,0,0,0);
+      if(n<b)b.setDate(b.getDate()-1);
+      return b.getTime();
+    };
+
+    /* 上海时区日期工具：用于按 08:00 切日 */
+    const shanghaiTs=(y,m,d,h=0,mi=0,s=0,ms=0)=>Date.UTC(y,m-1,d,h-8,mi,s,ms);
+
+    function parseDateStr(s){
+      const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||'');
+      if(!m) return null;
+      return {y:+m[1],m:+m[2],d:+m[3]};
+    }
+
+    function shanghaiDateInput(ts){
+      const parts=new Intl.DateTimeFormat('en-US',{
+        timeZone:'Asia/Shanghai',
+        year:'numeric',
+        month:'2-digit',
+        day:'2-digit'
+      }).formatToParts(new Date(ts));
+      const get=type=>parts.find(p=>p.type===type).value;
+      return `${get('year')}-${get('month')}-${get('day')}`;
+    }
+
+    const fmtYmd=ts=>new Intl.DateTimeFormat(dateLoc(),{
+      timeZone:'Asia/Shanghai',
+      year:'numeric',
+      month:'2-digit',
+      day:'2-digit'
+    }).format(new Date(ts)).replace(/\//g,'-');
+
+    const daysLeft = (listingMs)=>{
+      if(!listingMs) return 0;
+      const delta = THIRTY_DAYS - (Date.now() - listingMs);
+      return Math.max(0, Math.ceil(delta / 86400000));
+    };
+
+    /* ---------- fetch with 10s timeout ---------- */
+    function fetchWithTimeout(url, ms=10000){
+      const ctrl=new AbortController();
+      const tid=setTimeout(()=>ctrl.abort(),ms);
+      return fetch(url,{signal:ctrl.signal}).finally(()=>clearTimeout(tid));
+    }
+
+    /* ---------- 币安合约列表 ---------- */
+    let futuresSet = new Set();
+    async function fetchFutures(){
+      try{
+        const resp = await fetchWithTimeout(FUTURES_API);
+        if(!resp.ok) return;
+        const json = await resp.json();
+        const syms = json.symbols || [];
+        syms.forEach(s=>{
+          if(s.contractType==='PERPETUAL' && s.status==='TRADING'){
+            futuresSet.add(s.baseAsset.toUpperCase());
+          }
+        });
+      }catch(e){
+        console.warn('Futures API failed:', e);
+      }
+    }
+
+    /* ---------- DOM ---------- */
+    const tbody=document.querySelector('#tokenTable tbody');
+    const refreshBtn=document.getElementById('refreshBtn');
+    const progressEl=document.getElementById('progress');
+    const lastUpEl=document.getElementById('lastUp');
+    const thToday=document.getElementById('thToday');
+    const thPrev =document.getElementById('thPrev');
+    const toast =document.getElementById('toast');
+    const tokenEl=document.getElementById('tokenInput');
+    const startEl=document.getElementById('startTime');
+    const endEl =document.getElementById('endTime');
+    const rangeBtn=document.getElementById('rangeBtn');
+    const customVolEl=document.getElementById('customVol');
+    const hourlyBtn=document.getElementById('hourlyBtn');
+    const hourlyHoursEl=document.getElementById('hourlyHours');
+    const hourlyWrap=document.getElementById('hourlyWrap');
+    const dailyTokenEl=document.getElementById('dailyToken');
+    const dailyStartEl=document.getElementById('dailyStart');
+    const dailyEndEl=document.getElementById('dailyEnd');
+    const dailyBtn=document.getElementById('dailyBtn');
+    const dailyBox=document.getElementById('dailyBox');
+    const cacheToggleBtn=document.getElementById('cacheToggle');
+    const cacheClearAllBtn=document.getElementById('cacheClearAll');
+    const cacheListEl=document.getElementById('cacheList');
+    const CACHE_KEY='alphaRangeCache';
+    const onlyNewEl=document.getElementById('onlyNew');
+    const onlyFuturesEl=document.getElementById('onlyFutures');
+    const onlySecEl=document.getElementById('onlySec');
+    const onlyCompEl=document.getElementById('onlyComp');
+    const thCompVol=document.getElementById('thCompVol');
+
+    function showToast(msg){
+      toast.textContent=msg;toast.style.opacity='1';
+      setTimeout(()=>toast.style.opacity='0',3000);
+    }
+
+    /* ✅ 复制到剪贴板（带 execCommand 回退） */
+    function copyText(text){
+      const done = ok => showToast(ok ? `${t('copied')}：${text}` : t('copyFail'));
+      if(navigator.clipboard && window.isSecureContext){
+        navigator.clipboard.writeText(text).then(()=>done(true)).catch(()=>done(false));
+        return;
+      }
+      try{
+        const ta=document.createElement('textarea');
+        ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select();
+        const ok=document.execCommand('copy');
+        document.body.removeChild(ta);
+        done(ok);
+      }catch{ done(false); }
+    }
+
+    let rows=[],filter='',sortKey='todayQV',sortDir='desc',showNewOnly=false,showFuturesOnly=false,showSecOnly=false,showCompOnly=false;
+    window._boundary=nearest8UTC();
+
+    function pLimit(n){
+      const q=[];let run=0;
+      const next=()=>{if(run>=n||!q.length)return;run++;q.shift()().finally(()=>{run--;next();});};
+      return fn=>new Promise(res=>{q.push(()=>fn().then(res));next();});
+    }
+    const limit=pLimit(CONCURRENCY);
+
+    // ------------------------------
+    // ✅ K线成交额：优先 USDT，失败自动 fallback 到 USDC
+    // ------------------------------
+    async function qvOk(sym, start, end){
+      if(start>=end) return { ok:true, vol:0, trades:0 };
+      const url=`${K_API}?symbol=${encodeURIComponent(sym)}&interval=1h&startTime=${start}&endTime=${end}&limit=1500`;
+      try{
+        const json=await fetchWithTimeout(url).then(r=>r.json());
+
+        const ok =
+          (json?.success !== false) &&
+          (json?.code == null || ['000000','0'].includes(String(json.code)));
+
+        if(!ok) return { ok:false, vol:0, trades:0 };
+
+        const data=json?.data;
+        if(!Array.isArray(data)) return { ok:false, vol:0, trades:0 };
+
+        const vol=data.reduce((s,k)=>s+parseFloat(k?.[7]||0),0);
+        const trades=data.reduce((s,k)=>s+parseInt(k?.[8]||0),0);
+        return { ok:true, vol, trades };
+      }catch{
+        return { ok:false, vol:0, trades:0 };
+      }
+    }
+
+    async function qvAuto(row, start, end){
+      const primary = row.qSym || row.sym; // row.sym 默认是 `${alphaId}USDT`
+      let res = await qvOk(primary, start, end);
+      if(res.ok) return { vol:res.vol, trades:res.trades };
+
+      const alt = row.symUSDC || (row.sym && row.sym.endsWith('USDT') ? row.sym.replace(/USDT$/,'USDC') : '');
+      if(!alt || alt===primary) return { vol:0, trades:0 };
+
+      res = await qvOk(alt, start, end);
+      if(res.ok){
+        row.qSym = alt; // 缓存实际可用交易对
+        return { vol:res.vol, trades:res.trades };
+      }
+      return { vol:0, trades:0 };
+    }
+
+    /* 一次性拉取区间内所有 1h K 线（USDT→USDC fallback），本地切片避免多次请求 */
+    async function qvKlinesAuto(row, start, end){
+      if(start>=end) return [];
+      const fetchSym = async (sym) => {
+        const url=`${K_API}?symbol=${encodeURIComponent(sym)}&interval=1h&startTime=${start}&endTime=${end}&limit=1500`;
+        try{
+          const json=await fetchWithTimeout(url).then(r=>r.json());
+          const ok = (json?.success !== false) && (json?.code == null || ['000000','0'].includes(String(json.code)));
+          if(!ok) return null;
+          const data=json?.data;
+          return Array.isArray(data) ? data : null;
+        }catch{ return null; }
+      };
+      const primary = row.qSym || row.sym;
+      let data = await fetchSym(primary);
+      if(data) return data;
+      const alt = row.symUSDC || (row.sym && row.sym.endsWith('USDT') ? row.sym.replace(/USDT$/,'USDC') : '');
+      if(!alt || alt===primary) return [];
+      data = await fetchSym(alt);
+      if(data){ row.qSym = alt; return data; }
+      return [];
+    }
+
+    /* 公共：按名称/交易对查找代币行 */
+    function findRow(sym){
+      const lc = sym.toLowerCase();
+      // 聚合行匹配（支持中英文显示名）
+      const aggRow = rows.find(r => r.isAggregate && (
+        (I18N.zh[ 'aggSecName'] || '').toLowerCase() === lc ||
+        (I18N.en['aggSecName'] || '').toLowerCase() === lc ||
+        r.sym.toLowerCase() === lc
+      ));
+      if(aggRow) return aggRow;
+      let row=rows.find(r=>
+        !r.isAggregate && (
+          r.symbol.toLowerCase()===lc ||
+          (r.sym && r.sym.toLowerCase()===lc) ||
+          (r.symUSDC && r.symUSDC.toLowerCase()===lc) ||
+          (r.qSym && r.qSym.toLowerCase()===lc)
+        )
+      );
+      if(!row){
+        const m=sym.match(/_(\d+)/);
+        if(m) row={sym:`${m[1]}USDT`,symUSDC:`${m[1]}USDC`,qSym:null,symbol:sym};
+      }
+      return row||null;
+    }
+
+    /* 聚合/普通统一查询：聚合行 = 所有代币化证券之和 */
+    async function qvAutoUnified(row, start, end){
+      if(row && row.isAggregate){
+        const secRows = rows.filter(x => x.isTokenizedSecurity && !x.isAggregate);
+        const results = await Promise.all(secRows.map(x => qvAuto(x, start, end)));
+        return results.reduce((a,r)=>({vol:a.vol+r.vol, trades:a.trades+r.trades}), {vol:0, trades:0});
+      }
+      return qvAuto(row, start, end);
+    }
+
+    async function fillQVAll(list,today8,yest8,endTs,allRows){
+      allRows = allRows || list;
+      const regularList = list.filter(r=>!r.isAggregate);
+      const aggList = list.filter(r=>r.isAggregate);
+      let done=0,total=list.length;
+      progressEl.style.display='inline-block';
+      await Promise.all(regularList.map(r=>limit(async()=>{
+        const [todayRes,prevRes]=await Promise.all([
+          qvAuto(r,today8,endTs),
+          qvAuto(r,yest8,today8-1)
+        ]);
+        r.todayQV=todayRes.vol; r.prevQV=prevRes.vol;
+        // ✅ 交易赛交易量（qSym 已在上面的请求中解析）
+        if(r.comp){
+          const now=Date.now();
+          const cStart=r.comp.start, cEnd=r.comp.end;
+          if(now>cStart){
+            const compRes=await qvAuto(r, cStart, Math.min(now, cEnd));
+            r.compVol=compRes.vol; r.compTrades=compRes.trades;
+          } else {
+            r.compVol=0; r.compTrades=0;
+          }
+        }
+        progressEl.textContent=`${Math.floor(++done/total*100)}%`;
+      })));
+
+      // ✅ 聚合交易赛：对所有代币化证券在比赛时间段内求和
+      for(const r of aggList){
+        const c = r.comp;
+        const now = Date.now();
+        const secRows = allRows.filter(x => x.isTokenizedSecurity && !x.isAggregate);
+        r.vol24h = secRows.reduce((s,x)=>s+(+x.vol24h||0),0);
+        r.todayQV = secRows.reduce((s,x)=>s+(+x.todayQV||0),0);
+        r.prevQV = secRows.reduce((s,x)=>s+(+x.prevQV||0),0);
+        if(now <= c.start){
+          r.compVol = 0; r.compTrades = 0;
+        } else {
+          let totalVol = 0, totalTrades = 0;
+          await Promise.all(secRows.map(x=>limit(async()=>{
+            const res = await qvAuto(x, c.start, Math.min(now, c.end));
+            totalVol += res.vol;
+            totalTrades += res.trades;
+          })));
+          r.compVol = totalVol;
+          r.compTrades = totalTrades;
+        }
+        progressEl.textContent=`${Math.floor(++done/total*100)}%`;
+      }
+      progressEl.style.display='none';
+    }
+
+    const favs=()=>{try{return JSON.parse(localStorage.getItem(FAV_KEY)||'[]');}catch{return [];}};
+    function toggleFav(sym){
+      const f=favs();const i=f.indexOf(sym);
+      i>-1?f.splice(i,1):f.push(sym);
+      localStorage.setItem(FAV_KEY,JSON.stringify(f));
+      showToast(i>-1 ? t('favDel') : t('favAdd'));
+      render();
+    }
+
+    async function fetchList(){
+      const resp=await fetchWithTimeout(LIST_API);
+      if(!resp.ok)throw new Error('LIST_API Error');
+      const {data=[]}=await resp.json();
+
+      const list = data
+        .filter(t => {
+          // ✅ 过滤：仅当 listingCex=true 且已 cexOffDisplay=true 才视为现货下架；单独 listingCex=true 不能用来过滤
+          if (t.listingCex === true && t.cexOffDisplay === true) return false;
+          if (t.offline === true) return false;
+          return +t.volume24h > 0 || (t.stockState === true && t.rwaInfo != null);
+        })
+        .map(t=>{
+          const raw = Number(t.listingTime || 0);
+          const ltMs = raw ? (raw < 1e12 ? raw*1000 : raw) : 0;
+          const isTokenizedSecurity = t.stockState === true && t.rwaInfo != null;
+          // ✅ 代币化证券不计入"30天内上新"
+          const isNew = !isTokenizedSecurity && ltMs ? (Date.now() - ltMs) < THIRTY_DAYS : false;
+
+          // ✅ FDV：优先使用 API 返回字段，否则用 price × totalSupply
+          const priceN = +t.price || 0;
+          const totalSupplyN = +t.totalSupply || +t.circulatingSupply || 0;
+          const fdv =
+            +t.fdv ||
+            +t.fullyDilutedMarketCap ||
+            +t.fullyDilutedValuation ||
+            +t.marketCap ||
+            (priceN && totalSupplyN ? priceN * totalSupplyN : 0);
+
+          return {
+            price:priceN,
+            vol24h:+t.volume24h,
+            chg:+t.percentChange24h,
+            symbol:t.symbol,
+            icon:t.iconUrl,
+
+            // ✅ 默认仍用 USDT 作为"身份 key"（收藏等不受影响）
+            sym:`${t.alphaId}USDT`,
+            // ✅ USDC 备选交易对
+            symUSDC:`${t.alphaId}USDC`,
+            // ✅ 缓存：实际能用的交易对（USDT/USDC）
+            qSym:null,
+
+            // ✅ null 表示"还在加载"；0 才是真正的 0
+            todayQV:null,
+            prevQV:null,
+
+            listingTime: ltMs,
+            listingTimeFmt: ltMs ? fmtFull(ltMs) : '',
+            isNew,
+
+            // ✅ FDV
+            fdv,
+
+            // 代币化证券：按上面的答案，用 stockState + rwaInfo 判断
+            isTokenizedSecurity,
+
+            // ✅ 是否上了币安合约
+            hasFutures: futuresSet.has(t.symbol.toUpperCase()),
+
+            // ✅ 交易赛
+            comp: COMP_MAP[t.symbol.toUpperCase()] || null,
+            compVol: null,
+            compTrades: null
+          };
+        });
+
+      // ✅ 聚合类交易赛（如：代币化证券总交易大赛）— 合成一行
+      AGGREGATE_COMPS.forEach(agg => {
+        list.push({
+          price: 0,
+          vol24h: 0,
+          chg: 0,
+          symbol: `__AGG_${agg.symbol}`,
+          icon: 'https://pbs.twimg.com/profile_images/1614113185652670466/YeihoVJk_400x400.jpg',
+          sym: `__AGG_${agg.symbol}`,
+          symUSDC: null,
+          qSym: null,
+          todayQV: null,
+          prevQV: null,
+          listingTime: 0,
+          listingTimeFmt: '',
+          isNew: false,
+          fdv: 0,
+          isTokenizedSecurity: true,
+          hasFutures: false,
+          comp: agg,
+          compVol: null,
+          compTrades: null,
+          isAggregate: true
+        });
+      });
+
+      return list;
+    }
+
+    function sortRows(arr){
+      // null 值统一放到末尾（无论升序/降序）；compVol 列对无 comp 的行视为 null
+      const val = o => {
+        const v = o[sortKey];
+        if(sortKey==='compVol' && !o.comp) return null;
+        return v==null ? null : v;
+      };
+      return [...arr].sort((a,b)=>{
+        const va=val(a), vb=val(b);
+        if(va==null && vb==null) return 0;
+        if(va==null) return 1;
+        if(vb==null) return -1;
+        return sortDir==='desc' ? vb-va : va-vb;
+      });
+    }
+    function updateSortIcons(){
+      document.querySelectorAll('th.sortable').forEach(th=>{
+        th.classList.remove('asc','desc');
+        if(th.dataset.key===sortKey)th.classList.add(sortDir);
+      });
+    }
+
+    function render(){
+      const favSet=new Set(favs());
+      const priceBySym = {};
+      rows.forEach(r=>{ if(r.symbol && !r.isAggregate) priceBySym[r.symbol.toUpperCase()] = r.price; });
+      const filtered=rows.filter(r=>{
+        // 聚合行仅在"仅看交易赛"时显示
+        if(r.isAggregate && !showCompOnly) return false;
+        const f = filter;
+        const displayName = r.isAggregate ? t('aggSecName') : r.symbol;
+        const matched =
+          displayName.toLowerCase().includes(f) ||
+          (r.sym||'').toLowerCase().includes(f) ||
+          (r.symUSDC||'').toLowerCase().includes(f) ||
+          (r.qSym||'').toLowerCase().includes(f);
+
+        const newOk = !showNewOnly || r.isNew;
+        const futuresOk = !showFuturesOnly || r.hasFutures;
+        const secOk = !showSecOnly || r.isTokenizedSecurity;
+        const compOk = !showCompOnly || r.comp;
+        return matched && newOk && futuresOk && secOk && compOk;
+      });
+
+      const sorted=sortRows(filtered);
+      const display=[...sorted.filter(x=>favSet.has(x.sym)),...sorted.filter(x=>!favSet.has(x.sym))];
+
+      tbody.innerHTML=display.map((r,i)=>{
+        const left = r.isNew && r.listingTime ? daysLeft(r.listingTime) : 0;
+        const tipPrefix = t('listingTip');
+
+        // ✅ 交易赛标记
+        let compTag='';
+        if(r.comp){
+          const now=Date.now(), c=r.comp;
+          const compTip=t('compTip')(c.topN, c.pool, c.perWinner, fmtFull(c.start), fmtFull(c.end));
+          if(now<c.start){
+            compTag=`<span class="tag-comp comp-upcoming" title="${compTip}">${t('compUpcoming')}</span>`;
+          } else if(now<=c.end){
+            const remain=c.end-now;
+            const unit=remain<3600000?'m':remain<86400000?'h':'d';
+            const val=unit==='m'?Math.max(1,Math.ceil(remain/60000)):unit==='h'?Math.max(1,Math.ceil(remain/3600000)):Math.ceil(remain/86400000);
+            compTag=`<span class="tag-comp comp-active" title="${compTip}">${t('compActive')(val,unit)}</span>`;
+          } else {
+            compTag=`<span class="tag-comp comp-ended" title="${compTip}">${t('compEnded')}</span>`;
+          }
+        }
+
+        // ✅ 交易赛交易量列
+        let compCell='-';
+        if(r.comp){
+          if(r.compVol==null) compCell='…';
+          else {
+            const rewardAmt=parseFloat(r.comp.perWinner.replace(/,/g,''))||0;
+            const rewardPrice = r.comp.rewardSymbol
+              ? (priceBySym[r.comp.rewardSymbol.toUpperCase()]||0)
+              : r.price;
+            const rewardUsd=rewardAmt*rewardPrice;
+            compCell=`<span class="comp-vol-main" data-vol="${Math.round(r.compVol)}" title="点击复制">${nf0.format(r.compVol)}</span><span class="subl">${fmtShort(r.comp.start)}~${fmtShort(Math.min(Date.now(),r.comp.end))}</span>`
+              +`<span class="subl">🎁 ${r.comp.perWinner} ≈ $${nf2.format(rewardUsd)}</span>`;
+          }
+        }
+
+        const displayName = r.isAggregate ? t('aggSecName') : r.symbol;
+        const iconHtml = r.icon
+          ? `<img class="logo" loading="lazy" src="${r.icon}" referrerpolicy="no-referrer" onerror="this.src='https://bin.bnbstatic.com/static/images/common/base-token-default.png'">`
+          : '';
+        const priceCell = r.isAggregate ? '-' : fmtPrice(r.price);
+        const chgCell = r.isAggregate ? '-' : `<span class="${r.chg>=0?'up':'down'}">${r.chg.toFixed(2)}%</span>`;
+        const fdvCell = r.isAggregate ? '-' : fmtFdv(r.fdv);
+
+        return `
+        <tr data-sym="${r.sym}">
+          <td class="star ${favSet.has(r.sym)?'fav':''}">${r.isAggregate?'':(favSet.has(r.sym)?'★':'☆')}</td>
+          <td>${i+1}</td>
+          <td title="${r.listingTimeFmt ? (tipPrefix+r.listingTimeFmt) : ''}">
+            ${iconHtml}
+            ${displayName}
+            ${r.hasFutures ? `<span class="tag-futures">${t('futuresTag')}</span>` : ''}
+            ${r.isNew ? `<span class="tag-new" title="${tipPrefix}${r.listingTimeFmt}">${t('newTag')(left)}</span>` : ''}
+            ${compTag}
+          </td>
+          <td>${priceCell}</td>
+          <td>${nf0.format(r.vol24h)}</td>
+          <td>${chgCell}</td>
+          <td>${fdvCell}</td>
+          <td>${r.todayQV==null ? '…' : nf0.format(r.todayQV)}</td>
+          <td>${r.prevQV==null  ? '…' : nf0.format(r.prevQV)}</td>
+          ${showCompOnly?`<td>${compCell}</td>`:''}
+        </tr>
+      `;
+      }).join('');
+      updateSortIcons();
+    }
+
+    async function reloadAll(){
+      refreshBtn.disabled=true;progressEl.textContent='0%';
+      const isFirstLoad=!rows||rows.length===0;
+      if(isFirstLoad) tbody.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:24px">${t('loading')}</td></tr>`;
+      const today8=nearest8UTC(),yest8=today8-864e5,endTs=Date.now();
+
+      thToday.innerHTML=`${t('thTodayLabel')}<span class="subl">(${fmtShort(today8)}&nbsp;~&nbsp;${fmtShort(endTs)})</span>`;
+      thPrev.innerHTML =`${t('thPrevLabel')}<span class="subl">(${fmtShort(yest8)}&nbsp;~&nbsp;${fmtShort(today8-1)})</span>`;
+
+      try{
+        const newRows=await fetchList();
+        const hasFilter=showCompOnly||showNewOnly||showFuturesOnly||showSecOnly;
+        if(hasFilter && rows.length>0){
+          // 有筛选时只刷新符合条件的币种，其余复用旧数据
+          const visibleSet=new Set(newRows.filter(r=>{
+            const newOk=!showNewOnly||r.isNew;
+            const futuresOk=!showFuturesOnly||r.hasFutures;
+            const secOk=!showSecOnly||r.isTokenizedSecurity;
+            const compOk=!showCompOnly||r.comp;
+            return newOk&&futuresOk&&secOk&&compOk;
+          }).map(r=>r.symbol));
+          const oldMap=Object.fromEntries(rows.map(r=>[r.symbol,r]));
+          newRows.forEach(r=>{
+            if(!visibleSet.has(r.symbol)&&oldMap[r.symbol]){
+              const o=oldMap[r.symbol];
+              r.todayQV=o.todayQV; r.prevQV=o.prevQV; r.qSym=o.qSym;
+              if(o.compVol!=null){r.compVol=o.compVol; r.compTrades=o.compTrades;}
+            }
+          });
+          const toRefresh=newRows.filter(r=>visibleSet.has(r.symbol));
+          await fillQVAll(toRefresh,today8,yest8,endTs,newRows);
+        }else{
+          await fillQVAll(newRows,today8,yest8,endTs);
+        }
+        rows=newRows;
+        render();
+        lastUpEl.textContent=`${t('lastUp')} ${fmtFull(Date.now())}`;
+        window._boundary=today8;
+      }catch(e){
+        console.error(e);
+        const msg=e.message||t('unknownErr');
+        if(isFirstLoad) tbody.innerHTML=`<tr><td colspan="9">${t('failLoad')}${msg}</td></tr>`;
+        showToast(`${t('failLoad')}${msg}`);
+      }finally{
+        refreshBtn.disabled=false;
+      }
+    }
+
+    (function initDateInputs(){
+      const now=new Date();
+      const pad=n=>String(n).padStart(2,'0');
+      const toLocal=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      startEl.value=toLocal(new Date(nearest8UTC()));
+      endEl.value =toLocal(now);
+
+      // 按天统计默认最近 3 天
+      dailyStartEl.value = shanghaiDateInput(Date.now() - 2 * 86400000);
+      dailyEndEl.value   = shanghaiDateInput(Date.now());
+    })();
+
+    rangeBtn.addEventListener('click',async()=>{
+      const sym=tokenEl.value.trim();
+      if(!sym){showToast(t('enterSym'));return;}
+      const row=findRow(sym);
+      if(!row){showToast(t('notFound'));return;}
+
+      const st=new Date(startEl.value).getTime(),et=new Date(endEl.value).getTime();
+      if(!st||!et||st>=et){showToast(t('badRange'));return;}
+
+      rangeBtn.disabled=true;progressEl.textContent=t('querying');progressEl.style.display='inline-block';
+      const res=await qvAutoUnified(row,st,et-1);
+      rangeBtn.disabled=false;progressEl.style.display='none';
+      const avgPerTrade=res.trades>0?(res.vol/res.trades):0;
+      const displayLabel = row.isAggregate ? t('aggSecName') : (row.symbol||sym);
+      // store for lang-switch re-render
+      customVolEl.dataset.sym=displayLabel; customVolEl.dataset.st=st; customVolEl.dataset.et=et;
+      customVolEl.dataset.vol=res.vol; customVolEl.dataset.trades=res.trades;
+      customVolEl.innerHTML=t('rangeTpl')(displayLabel, fmtFull(st), fmtFull(et), nf0.format(res.vol))
+        + `<br>${t('tradeStats')(nf0.format(res.trades), nf0.format(Math.round(avgPerTrade)))}`;
+
+      // 保存到缓存
+      saveCache({symbol:displayLabel, start:st, end:et, vol:res.vol, trades:res.trades, time:Date.now()});
+    });
+
+    /* ---------- 近N小时每小时交易量 ---------- */
+    hourlyBtn.addEventListener('click',async()=>{
+      const sym=tokenEl.value.trim();
+      if(!sym){showToast(t('enterSym'));return;}
+      const row=findRow(sym);
+      if(!row){showToast(t('notFound'));return;}
+
+      const hours=Math.max(1,Math.min(72,parseInt(hourlyHoursEl.value)||6));
+      const now=Date.now();
+      const endH=new Date(now);endH.setMinutes(0,0,0);
+      const endTs=endH.getTime();
+      const startTs=endTs-hours*3600000;
+      const hasPartial=now-endTs>60000; // 超过1分钟才显示当前不完整小时
+
+      hourlyBtn.disabled=true;progressEl.textContent=t('querying');progressEl.style.display='inline-block';
+
+      // ✅ 一次性拉取整段区间的 K 线，本地切片分桶，避免 hours×N 次请求
+      const targetRows = row.isAggregate
+        ? rows.filter(x => x.isTokenizedSecurity && !x.isAggregate)
+        : [row];
+      const rangeEnd = hasPartial ? now : (endTs - 1);
+      let fetched=0;
+      const allKlines = await Promise.all(targetRows.map(r => limit(async () => {
+        const data = await qvKlinesAuto(r, startTs, rangeEnd);
+        progressEl.textContent=`${Math.floor(++fetched/targetRows.length*100)}%`;
+        return data;
+      })));
+
+      const hourlyData=[];
+      for(let i=0;i<hours;i++){
+        const hStart=startTs+i*3600000;
+        const hEnd=hStart+3600000-1;
+        let vol=0, trades=0;
+        for(const klines of allKlines){
+          for(const k of klines){
+            const ot=+k[0];
+            if(ot>=hStart && ot<=hEnd){
+              vol += parseFloat(k?.[7]||0);
+              trades += parseInt(k?.[8]||0);
+            }
+          }
+        }
+        hourlyData[i]={start:hStart,end:hEnd,vol,trades};
+      }
+      if(hasPartial){
+        let vol=0, trades=0;
+        for(const klines of allKlines){
+          for(const k of klines){
+            const ot=+k[0];
+            if(ot>=endTs){
+              vol += parseFloat(k?.[7]||0);
+              trades += parseInt(k?.[8]||0);
+            }
+          }
+        }
+        hourlyData[hours]={start:endTs,end:now,vol,trades,partial:true};
+      }
+
+      hourlyBtn.disabled=false;progressEl.style.display='none';
+
+      const totalVol=hourlyData.reduce((s,d)=>s+d.vol,0);
+      const totalTrades=hourlyData.reduce((s,d)=>s+d.trades,0);
+      const displayLabel = row.isAggregate ? t('aggSecName') : (row.symbol||sym);
+      // store for lang-switch re-render
+      window._lastHourlyData={symbol:displayLabel, hours, data:hourlyData};
+      renderHourly(window._lastHourlyData);
+
+      // 保存小时查询到缓存
+      saveCache({symbol:displayLabel, start:startTs, end:endTs, vol:totalVol, trades:totalTrades, time:Date.now(), type:'hourly', hours});
+    });
+
+    /* ---------- 小时图渲染（可复用） ---------- */
+    function renderHourly(info){
+      const {symbol, hours, data:hourlyData}=info;
+      const maxVol=Math.max(...hourlyData.map(d=>d.vol),1);
+      const minVol=Math.min(...hourlyData.map(d=>d.vol));
+      const totalVol=hourlyData.reduce((s,d)=>s+d.vol,0);
+      const totalTrades=hourlyData.reduce((s,d)=>s+d.trades,0);
+      const totalAvg=totalTrades>0?Math.round(totalVol/totalTrades):0;
+      const maxBarH=120;
+      const fmtHour=(ts,partial)=>{
+        const d=new Date(ts);
+        if(partial){const hh=String(d.getHours()).padStart(2,'0');const mm=String(d.getMinutes()).padStart(2,'0');return `${hh}:${mm}`;}
+        const hh=String(d.getHours()).padStart(2,'0');
+        return `${hh}:00`;
+      };
+      const fmtHourEnd=(ts)=>{
+        const d=new Date(ts+1);
+        const hh=String(d.getHours()).padStart(2,'0');
+        return `${hh}:00`;
+      };
+      const collapsed = hourlyWrap.classList.contains('collapsed');
+      const minLabel = collapsed ? t('hourlyExpand') : t('hourlyMinimize');
+      const minIcon = collapsed ? '▼' : '▲';
+      hourlyWrap.innerHTML=`<div class="hourly-header"><span class="hourly-title">${t('hourlyTpl')(symbol,hours)}</span><span class="hourly-total">${t('hourlyTotal')(nf0.format(totalVol))}<br><small style="font-weight:normal;color:#888">${t('tradeStats')(nf0.format(totalTrades), nf0.format(totalAvg))}</small></span><span class="hourly-actions"><button type="button" class="hourly-min" id="hourlyMinBtn" title="${minLabel}">${minIcon} ${minLabel}</button></span></div>
+        <div class="hourly-scroll"><div class="hourly-bar">${hourlyData.map((d,i)=>{
+          const h=Math.max(4,Math.round(d.vol/maxVol*maxBarH));
+          const cls=hours>1&&d.vol===maxVol?'h-col h-max':hours>1&&d.vol===minVol?'h-col h-min':'h-col';
+          const avg=d.trades>0?Math.round(d.vol/d.trades):0;
+          return `<div class="${cls}">
+            <div class="h-val">${nf0.format(d.vol)}<br><small style="color:#888;font-size:11px">${t('avgPerTrade')(nf0.format(avg))}</small></div>
+            <div class="h-bar" style="height:${h}px;animation-delay:${i*30}ms"></div>
+            <div class="h-lbl">${fmtHour(d.start,false)}-${d.partial?fmtHour(d.end,true):fmtHourEnd(d.end)}${d.partial?'*':''}</div>
+          </div>`;
+        }).join('')}</div></div>`;
+    }
+
+    /* ---------- 按天统计每天总交易量 ---------- */
+    async function ensureRows(){
+      if(!rows.length){
+        rows = await fetchList();
+        render();
+      }
+    }
+
+    async function dailyStats(){
+      const tokenIn=(dailyTokenEl.value||'').trim();
+      const sObj=parseDateStr(dailyStartEl.value);
+      const eObj=parseDateStr(dailyEndEl.value);
+
+      if(!sObj||!eObj){
+        showToast(t('dailyBadDate'));
+        return;
+      }
+
+      // 以“上海时间当天 08:00”为日切点
+      const start8=shanghaiTs(sObj.y,sObj.m,sObj.d,8);
+      const end8=shanghaiTs(eObj.y,eObj.m,eObj.d,8);
+
+      if(end8<start8){
+        showToast(t('badRange'));
+        return;
+      }
+
+      const days=[];
+      for(let ts=start8;ts<=end8;ts+=86400000){
+        days.push({
+          start:ts,
+          end:ts+86400000-1,
+          vol:0,
+          trades:0
+        });
+      }
+
+      dailyBtn.disabled=true;
+      progressEl.textContent='0%';
+      progressEl.style.display='inline-block';
+
+      try{
+        await ensureRows();
+
+        let targetRows=[];
+        let mode='all';
+        let symbol='';
+
+        if(tokenIn){
+          const row=findRow(tokenIn);
+          if(!row){
+            showToast(t('notFound'));
+            return;
+          }
+
+          if(row.isAggregate){
+            // 聚合行：例如“代币化证券总交易大赛”
+            targetRows=rows.filter(x=>x.isTokenizedSecurity && !x.isAggregate);
+            mode='agg';
+          }else{
+            targetRows=[row];
+            mode='symbol';
+            symbol=row.symbol||tokenIn;
+          }
+        }else{
+          // 空输入：全部 Alpha 代币总量，排除人工合成的聚合行，避免重复计算
+          targetRows=rows.filter(x=>!x.isAggregate);
+          mode='all';
+        }
+
+        if(!targetRows.length){
+          showToast(t('notFound'));
+          return;
+        }
+
+        const rangeEnd=days[days.length-1].end;
+
+        // 1h K线 API limit=1500，按 60 天切块，避免长区间被截断
+        const CHUNK_MS=60*86400000;
+
+        let done=0;
+        const total=targetRows.length;
+
+        await Promise.all(targetRows.map(r=>limit(async()=>{
+          for(let st=start8;st<=rangeEnd;st+=CHUNK_MS){
+            const et=Math.min(rangeEnd,st+CHUNK_MS-1);
+            const klines=await qvKlinesAuto(r,st,et);
+
+            for(const k of klines){
+              const ot=+k[0];
+              if(ot<start8 || ot>rangeEnd) continue;
+
+              const idx=Math.floor((ot-start8)/86400000);
+              if(idx>=0 && idx<days.length){
+                days[idx].vol += parseFloat(k?.[7]||0);
+                days[idx].trades += parseInt(k?.[8]||0);
+              }
+            }
+          }
+
+          progressEl.textContent=`${Math.floor(++done/total*100)}%`;
+        })));
+
+        window._lastDailyData={mode,symbol,days};
+        renderDaily(window._lastDailyData);
+
+      }finally{
+        dailyBtn.disabled=false;
+        progressEl.style.display='none';
+      }
+    }
+
+    function renderDaily(info){
+      const title =
+        info.mode==='all' ? t('dailyAll') :
+        info.mode==='agg' ? t('aggSecName') :
+        info.symbol;
+
+      const body=info.days.map(d=>{
+        const avg=d.trades>0 ? Math.round(d.vol/d.trades) : 0;
+
+        return `<tr>
+          <td>${fmtYmd(d.start)}</td>
+          <td class="subl">${fmtShort(d.start)} ~ ${fmtShort(d.end+1)}</td>
+          <td><strong>${nf0.format(d.vol)}</strong></td>
+          <td>${nf0.format(d.trades)}</td>
+          <td>${d.trades>0 ? '$'+nf0.format(avg) : '-'}</td>
+        </tr>`;
+      }).join('');
+
+      const sumVol=info.days.reduce((s,d)=>s+d.vol,0);
+      const sumTrades=info.days.reduce((s,d)=>s+d.trades,0);
+      const dayCount=info.days.length||1;
+      const avgVol=sumVol/dayCount;
+      const avgTrades=sumTrades/dayCount;
+      const avgPerTrade=sumTrades>0 ? Math.round(sumVol/sumTrades) : 0;
+
+      dailyBox.innerHTML=`
+        <h3>${t('dailyTitle')(title)}</h3>
+        <p class="tip">${t('dailyTip')(info.days.length)}</p>
+        <div class="daily-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>${t('dailyDate')}</th>
+                <th>${t('dailyWindow')}</th>
+                <th>${t('dailyVolume')}</th>
+                <th>${t('dailyTrades')}</th>
+                <th>${t('dailyAvgTrade')}</th>
+              </tr>
+            </thead>
+            <tbody>${body}</tbody>
+            <tfoot>
+              <tr>
+                <td>${t('dailySum')}</td>
+                <td></td>
+                <td>${nf0.format(sumVol)}</td>
+                <td>${nf0.format(sumTrades)}</td>
+                <td>${sumTrades>0 ? '$'+nf0.format(avgPerTrade) : '-'}</td>
+              </tr>
+              <tr>
+                <td>${t('dailyMean')}</td>
+                <td></td>
+                <td>${nf0.format(avgVol)}</td>
+                <td>${nf0.format(avgTrades)}</td>
+                <td>${sumTrades>0 ? '$'+nf0.format(avgPerTrade) : '-'}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      `;
+    }
+
+    dailyBtn.addEventListener('click',dailyStats);
+
+    /* ---------- 区间查询缓存记录 ---------- */
+    function getCache(){try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'[]');}catch{return [];}}
+    function setCache(arr){localStorage.setItem(CACHE_KEY,JSON.stringify(arr));renderCache();}
+    function saveCache(entry){
+      const cache=getCache();
+      cache.unshift(entry);
+      if(cache.length>50)cache.length=50;
+      setCache(cache);
+    }
+    function deleteCache(idx){
+      const cache=getCache();cache.splice(idx,1);setCache(cache);
+    }
+    function clearAllCache(){
+      localStorage.removeItem(CACHE_KEY);renderCache();
+    }
+    function loadCache(idx){
+      const cache=getCache();
+      const item=cache[idx];
+      if(!item)return;
+      customVolEl.dataset.sym=item.symbol; customVolEl.dataset.st=item.start; customVolEl.dataset.et=item.end;
+      customVolEl.dataset.vol=item.vol; customVolEl.dataset.trades=item.trades||0;
+      customVolEl.innerHTML=t('rangeTpl')(item.symbol, fmtFull(item.start), fmtFull(item.end), nf0.format(item.vol))
+        + (item.trades ? `<br>${t('tradeStats')(nf0.format(item.trades), nf0.format(Math.round(item.vol/item.trades)))}` : '');
+      // 回填输入框，方便微调再查
+      tokenEl.value=item.symbol;
+      const pad=n=>String(n).padStart(2,'0');
+      const toLocal=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      startEl.value=toLocal(new Date(item.start));
+      endEl.value=toLocal(new Date(item.end));
+    }
+    function renderCache(){
+      const cache=getCache();
+      const hasData=cache.length>0;
+      cacheToggleBtn.style.display=hasData?'inline-block':'none';
+      cacheClearAllBtn.style.display=(hasData&&cacheListEl.style.display==='block')?'inline-block':'none';
+      cacheClearAllBtn.textContent=t('cacheClearAll');
+      if(!hasData){cacheListEl.style.display='none';return;}
+      const open=cacheListEl.style.display==='block';
+      if(!open)return;
+      cacheListEl.innerHTML=cache.map((c,i)=>{
+        const typeBadge=c.type==='hourly'?`<span style="font-size:.68rem;padding:0 4px;border-radius:4px;background:rgba(37,99,235,.1);color:var(--primary);margin-right:4px">${c.hours||6}h</span>`:'';
+        const timeStr=c.time?`<span style="color:var(--sub);font-size:.72rem;margin-left:6px">${t('cacheTime')} ${fmtFull(c.time)}</span>`:'';
+        return `<div class="cache-item">
+          <span class="ci-info" data-idx="${i}">${typeBadge}<strong>${c.symbol}</strong>&nbsp; ${fmtFull(c.start)} ~ ${fmtFull(c.end)}&nbsp; → ${nf0.format(c.vol)}${timeStr}</span>
+          <span class="ci-del" data-delidx="${i}">${t('cacheDel')}</span>
+        </div>`;
+      }).join('');
+    }
+    cacheToggleBtn.addEventListener('click',()=>{
+      const open=cacheListEl.style.display==='block';
+      cacheListEl.style.display=open?'none':'block';
+      cacheToggleBtn.textContent=open?t('cacheTitle'):t('cacheHide');
+      cacheClearAllBtn.style.display=(!open&&getCache().length)?'inline-block':'none';
+      if(!open)renderCache();
+    });
+    cacheClearAllBtn.addEventListener('click',()=>{
+      clearAllCache();
+      cacheListEl.style.display='none';
+      cacheToggleBtn.textContent=t('cacheTitle');
+      cacheClearAllBtn.style.display='none';
+    });
+    cacheListEl.addEventListener('click',e=>{
+      const delBtn=e.target.closest('[data-delidx]');
+      if(delBtn){e.stopPropagation();deleteCache(+delBtn.dataset.delidx);return;}
+      const item=e.target.closest('[data-idx]');
+      if(item)loadCache(+item.dataset.idx);
+    });
+    (function initCache(){
+      const cache=getCache();
+      if(cache.length){
+        cacheToggleBtn.style.display='inline-block';
+        cacheToggleBtn.textContent=t('cacheTitle');
+      }
+    })();
+
+    document.getElementById('search').addEventListener('input',e=>{
+      filter=e.target.value.trim().toLowerCase();render();
+    });
+
+    tbody.addEventListener('click',e=>{
+      const s=e.target.closest('.star');
+      if(s){
+        const trSym=s.closest('tr').dataset.sym;
+        const row=rows.find(r=>r.sym===trSym);
+        if(row&&row.isAggregate) return;
+        s.classList.add('bounce');setTimeout(()=>s.classList.remove('bounce'),150);toggleFav(trSym);return;
+      }
+      // ✅ 点击交易赛总交易量 → 复制原始数字
+      const cv=e.target.closest('.comp-vol-main');
+      if(cv&&cv.dataset.vol){
+        e.stopPropagation();
+        copyText(cv.dataset.vol);
+        return;
+      }
+      // 点击表格行自动填充代币名到输入框
+      const tr=e.target.closest('tr');
+      if(tr&&tr.dataset.sym){
+        const row=rows.find(r=>r.sym===tr.dataset.sym);
+        if(row){
+          const label = row.isAggregate ? t('aggSecName') : row.symbol;
+          tokenEl.value=label;
+          dailyTokenEl.value=label;
+          showToast(label);
+        }
+      }
+    });
+
+    /* ✅ 小时图：缩小/展开 */
+    hourlyWrap.addEventListener('click',e=>{
+      const btn=e.target.closest('#hourlyMinBtn');
+      if(!btn) return;
+      const collapsed = hourlyWrap.classList.toggle('collapsed');
+      const label = collapsed ? t('hourlyExpand') : t('hourlyMinimize');
+      const icon = collapsed ? '▼' : '▲';
+      btn.textContent = `${icon} ${label}`;
+      btn.title = label;
+    });
+
+    document.querySelectorAll('th.sortable').forEach(th=>{
+      th.addEventListener('click',()=>{
+        const key=th.dataset.key;
+        sortDir=(sortKey===key&&sortDir==='desc')?'asc':'desc';sortKey=key;render();
+      });
+    });
+
+    onlyNewEl.addEventListener('change', (e)=>{
+      showNewOnly = e.target.checked;
+      render();
+    });
+
+    onlyFuturesEl.addEventListener('change', (e)=>{
+      showFuturesOnly = e.target.checked;
+      render();
+    });
+
+    onlySecEl.addEventListener('change', (e)=>{
+      showSecOnly = e.target.checked;
+      render();
+    });
+
+    onlyCompEl.addEventListener('change', (e)=>{
+      showCompOnly = e.target.checked;
+      thCompVol.style.display = showCompOnly ? '' : 'none';
+      render();
+    });
+
+    refreshBtn.addEventListener('click', reloadAll);
+
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState==='visible'&&nearest8UTC()!==window._boundary)reloadAll();
+    });
+    setInterval(()=>{if(document.visibilityState==='visible')reloadAll();},300000);
+
+    /* ---------- 深色模式切换 ---------- */
+    (function initTheme(){
+      const saved=localStorage.getItem('theme');
+      if(saved)document.documentElement.classList.add(saved);
+    })();
+    document.getElementById('themeBtn').addEventListener('click',()=>{
+      const root=document.documentElement;
+      const isDark=root.classList.contains('dark')||(
+        !root.classList.contains('light')&&matchMedia('(prefers-color-scheme:dark)').matches
+      );
+      root.classList.remove('dark','light');
+      root.classList.add(isDark?'light':'dark');
+      localStorage.setItem('theme',isDark?'light':'dark');
+    });
+
+    /* ---------- 语言切换 ---------- */
+    document.getElementById('langBtn').addEventListener('click',()=>{
+      curLang = curLang==='zh' ? 'en' : 'zh';
+      localStorage.setItem('lang', curLang);
+      applyI18n();
+      // 刷新表头时间 & 表格内容
+      const today8=nearest8UTC(),yest8=today8-864e5,endTs=Date.now();
+      thToday.innerHTML=`${t('thTodayLabel')}<span class="subl">(${fmtShort(today8)}&nbsp;~&nbsp;${fmtShort(endTs)})</span>`;
+      thPrev.innerHTML =`${t('thPrevLabel')}<span class="subl">(${fmtShort(yest8)}&nbsp;~&nbsp;${fmtShort(today8-1)})</span>`;
+      thCompVol.textContent=t('thCompVol');
+      // 刷新 lastUp 时间文案
+      if(lastUpEl.textContent) lastUpEl.textContent=`${t('lastUp')} ${fmtFull(Date.now())}`;
+      // 刷新缓存区文案
+      renderCache();
+      const cacheOpen=cacheListEl.style.display==='block';
+      cacheToggleBtn.textContent=cacheOpen?t('cacheHide'):t('cacheTitle');
+      cacheClearAllBtn.textContent=t('cacheClearAll');
+      // 刷新区间查询结果（如果有内容）
+      if(customVolEl.dataset.sym){
+        const d=customVolEl.dataset;
+        customVolEl.innerHTML=t('rangeTpl')(d.sym, fmtFull(+d.st), fmtFull(+d.et), nf0.format(+d.vol))
+          + (d.trades>0 ? `<br>${t('tradeStats')(nf0.format(+d.trades), nf0.format(Math.round(+d.vol/+d.trades)))}` : '');
+      }
+      // 刷新小时图（如果有内容）
+      if(window._lastHourlyData){
+        renderHourly(window._lastHourlyData);
+      }
+      // 刷新按天统计（如果有内容）
+      if(window._lastDailyData){
+        renderDaily(window._lastDailyData);
+      }
+      render();
+    });
+
+    /* ---------- 回到顶部 ---------- */
+    const backTopBtn=document.getElementById('backTop');
+    window.addEventListener('scroll',()=>{
+      backTopBtn.style.display=window.scrollY>300?'flex':'none';
+    },{passive:true});
+    backTopBtn.addEventListener('click',()=>{
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+
+    /* ---------- 初始化 ---------- */
+    applyI18n();
+    // 先拉合约列表，再加载主数据
+    fetchFutures().then(()=>reloadAll());
+  </script>
+</body>
+</html>
